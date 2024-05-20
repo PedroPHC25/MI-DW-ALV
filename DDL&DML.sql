@@ -1,14 +1,14 @@
 CREATE TABLE Produtora (
-    ProdutoraID VARCHAR(2) PRIMARY KEY,
+    ProdutoraID VARCHAR(5) PRIMARY KEY,
     ProdutoraNome VARCHAR(100) NOT NULL
 );
 
 CREATE TABLE Filme (
-    FilmeID VARCHAR(2) PRIMARY KEY,
+    FilmeID VARCHAR(5) PRIMARY KEY,
     DuracaoMin INT,
     FilmeNome VARCHAR(100),
     AnoDeLancamento INT,
-    ProdutoraID VARCHAR(2),
+    ProdutoraID VARCHAR(5),
     FOREIGN KEY (ProdutoraID) REFERENCES Produtora(ProdutoraID)
 );
 
@@ -19,7 +19,7 @@ CREATE TABLE Plano (
 );
 
 CREATE TABLE Usuario (
-    UsuarioID VARCHAR(2) PRIMARY KEY,
+    UsuarioID VARCHAR(5) PRIMARY KEY,
     Email VARCHAR(100),
     Telefone VARCHAR(15),
     DataVencimento DATE,
@@ -35,28 +35,28 @@ CREATE TABLE Usuario (
 );
 
 CREATE TABLE Filme_GeneroFilme (
-    FilmeID VARCHAR(2),
+    FilmeID VARCHAR(5),
     GeneroFilme VARCHAR(50),
     PRIMARY KEY (FilmeID, GeneroFilme),
     FOREIGN KEY (FilmeID) REFERENCES Filme(FilmeID)
 );
 
 CREATE TABLE Filme_DiretorFilme (
-    FilmeID VARCHAR(2),
+    FilmeID VARCHAR(5),
     DiretorFilme VARCHAR(100),
     PRIMARY KEY (FilmeID, DiretorFilme),
     FOREIGN KEY (FilmeID) REFERENCES Filme(FilmeID)
 );
 
 CREATE TABLE Filme_AtorFilme (
-    FilmeID VARCHAR(2),
+    FilmeID VARCHAR(5),
     AtorFilme VARCHAR(100),
     PRIMARY KEY (FilmeID, AtorFilme),
     FOREIGN KEY (FilmeID) REFERENCES Filme(FilmeID)
 );
 
 CREATE TABLE Assinatura (
-    AssinaturaID VARCHAR(4) PRIMARY KEY,
+    AssinaturaID VARCHAR(7) PRIMARY KEY,
     DataInicio DATE,
     DataFim DATE,
     Status VARCHAR(50),
@@ -65,8 +65,8 @@ CREATE TABLE Assinatura (
 );
 
 CREATE TABLE UsrPagto (
-    UsuarioID VARCHAR(2),
-    AssinaturaID VARCHAR(4),
+    UsuarioID VARCHAR(5),
+    AssinaturaID VARCHAR(7),
     ValorPago DECIMAL(10, 2),
     DataPagto DATE,
     PRIMARY KEY (UsuarioID, AssinaturaID),
@@ -75,8 +75,8 @@ CREATE TABLE UsrPagto (
 );
 
 CREATE TABLE Assiste (
-    UsuarioID VARCHAR(2),
-    FilmeID VARCHAR(2),
+    UsuarioID VARCHAR(5),
+    FilmeID VARCHAR(5),
     Data DATE,
     PRIMARY KEY (UsuarioID, FilmeID, Data),
     FOREIGN KEY (UsuarioID) REFERENCES Usuario(UsuarioID),
@@ -84,49 +84,49 @@ CREATE TABLE Assiste (
 );
 
 CREATE TABLE Avaliacao (
-    AvaliacaoID VARCHAR(2) PRIMARY KEY,
+    AvaliacaoID VARCHAR(5) PRIMARY KEY,
     Comentario TEXT,
     AvaliacaoData DATE,
     Nota INT,
-    UsuarioID VARCHAR(2),
-    FilmeID VARCHAR(2),
-    AssinaturaID VARCHAR(4),
+    UsuarioID VARCHAR(5),
+    FilmeID VARCHAR(5),
+    AssinaturaID VARCHAR(7),
     FOREIGN KEY (UsuarioID) REFERENCES Usuario(UsuarioID),
     FOREIGN KEY (FilmeID) REFERENCES Filme(FilmeID),
     FOREIGN KEY (AssinaturaID) REFERENCES Assinatura(AssinaturaID)
 );
 
 CREATE TABLE Cargo (
-    CargoID VARCHAR(2) PRIMARY KEY,
+    CargoID VARCHAR(3) PRIMARY KEY,
     CargoNome VARCHAR(100)
 );
 
 CREATE TABLE Funcionario (
-    FuncionarioID VARCHAR(5) PRIMARY KEY,
+    FuncionarioID VARCHAR(8) PRIMARY KEY,
     Salario DECIMAL(10, 2),
     FuncionarioNome VARCHAR(100),
-    CargoID VARCHAR(2),
+    CargoID VARCHAR(3),
     FOREIGN KEY (CargoID) REFERENCES Cargo(CargoID)
 );
 
 CREATE TABLE Modera (
-    FuncionarioID VARCHAR(5),
-    AvaliacaoID VARCHAR(2),
+    FuncionarioID VARCHAR(8),
+    AvaliacaoID VARCHAR(5),
     PRIMARY KEY (FuncionarioID, AvaliacaoID),
     FOREIGN KEY (FuncionarioID) REFERENCES Funcionario(FuncionarioID),
     FOREIGN KEY (AvaliacaoID) REFERENCES Avaliacao(AvaliacaoID)
 );
 
 CREATE TABLE GerenciaConteudo (
-    FuncionarioID VARCHAR(5),
-    FilmeID VARCHAR(2),
+    FuncionarioID VARCHAR(8),
+    FilmeID VARCHAR(5),
     PRIMARY KEY (FuncionarioID, FilmeID),
     FOREIGN KEY (FuncionarioID) REFERENCES Funcionario(FuncionarioID),
     FOREIGN KEY (FilmeID) REFERENCES Filme(FilmeID)
 );
 
 CREATE TABLE FilmPagtoRoy (
-    FilmeID VARCHAR(2),
+    FilmeID VARCHAR(5),
     ValorPagto DECIMAL(10, 2),
     DataPagto DATE,
     PRIMARY KEY (FilmeID, DataPagto),
