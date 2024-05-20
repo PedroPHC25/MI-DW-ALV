@@ -63,7 +63,7 @@ CREATE TABLE Produtora
   ProdutoraKey VARCHAR NOT NULL,
   ProdutoraID VARCHAR NOT NULL,
   ProdutoraNome VARCHAR NOT NULL,
-  PRIMARY KEY (GeneroKey)
+  PRIMARY KEY (ProdutoraKey)
 );
 
 CREATE TABLE Avaliacoes
