@@ -73,10 +73,12 @@ CREATE TABLE Avaliacoes
   FilmeKey VARCHAR NOT NULL,
   ProdutoraKey VARCHAR NOT NULL,
   CalendarioKey VARCHAR NOT NULL,
+  UsuarioKey VARCHAR NOT NULL,
   Nota INT NOT NULL,
   Hora TIME NOT NULL,
   PRIMARY KEY (AvaliacaoID, GeneroKey),
   FOREIGN KEY (GeneroKey) REFERENCES Genero(GeneroKey),
+  FOREIGN KEY (UsuarioKey) REFERENCES Usuario(UsuarioKey),
   FOREIGN KEY (FilmeKey) REFERENCES Filme(FilmeKey),
   FOREIGN KEY (ProdutoraKey) REFERENCES Produtora(ProdutoraKey),
   FOREIGN KEY (CalendarioKey) REFERENCES Calendario(CalendarioKey)
