@@ -73,7 +73,7 @@ ELSIF (TG_OP = 'DELETE') then
 		TG_TABLE_SCHEMA::TEXT,
 		TG_TABLE_NAME::TEXT,
 		session_user::TEXT,
-		substring(TG_OP,1,1),D
+		substring(TG_OP,1,1),
 		v_old_data,
 		current_query()
 	);
