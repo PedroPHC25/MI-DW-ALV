@@ -2,8 +2,10 @@
 	ETL incremental do DW da ALV.
 */
 
+-- Reinicia esquema de auditoria.
 Drop schema if exists audit cascade;
 create schema audit;
+
 set search_path=audit;
 
 /*
@@ -101,16 +103,20 @@ else
 	RETURN NULL;
 end if;
 
+-- Tratando exceções de erros nos dados.
 EXCEPTION
+	-- Erro de tipo.
 	WHEN data_exception THEN
 		RAISE WARNING '[AUDIT.IF_MODIFIED_FUNC] - UDF ERROR [DATA EXCEPTION] - SQLSTATE: %, SQLERRM: %',SQLSTATE,SQLERRM;
 	RETURN NULL;
+	-- Violação de unicidade.
 	WHEN unique_violation THEN
 		RAISE WARNING '[AUDIT.IF_MODIFIED_FUNC] - UDF ERROR [UNIQUE] - SQLSTATE: %, SQLERRM: %',SQLSTATE,SQLERRM;
 	RETURN NULL;
 	WHEN others THEN
 		RAISE WARNING '[AUDIT.IF_MODIFIED_FUNC] - UDF ERROR [OTHER] - SQLSTATE: %, SQLERRM: %',SQLSTATE,SQLERRM;
 	RETURN NULL;
+	-- SQLSTATE e SQLERRM são variáveis que tem código de estado do erro sql e a mensgagem de erro, respectivamente.
 END;
 $body$
 LANGUAGE plpgsql
@@ -121,6 +127,12 @@ SET search_path = pg_catalog, audit;
 
 /*
 	Triggers para as mudanças nas tabelas específicas.
+	Cada trigger é disparado quando a tabela original, no esquema relacional
+	é alterada com novos dados e é responsável por registrar somente esses 
+	novos dados na tabela de auditoria para que seja possível a atualização
+	do DW.
+	Aqui estão sendo criadas triggers apenas para as mudanças de tabelas
+	que importam para o DW.
 */
 
 -- Produtora
@@ -549,7 +561,6 @@ SELECT
 FROM
     alv.Usuario u inner join audit.ins_Usuario au where u.UsuarioID == au.UsuarioID;
 
-
 -- Atualizando dimensão de calendário.
 INSERT INTO dw_alv.Calendario
 SELECT
@@ -576,6 +587,7 @@ FROM(
     ) AS d) AS cal
 WHERE CAST(cal.DataCompleta AS DATE) NOT IN (SELECT DataCompleta FROM dw_alv.Calendario);
 
+
 -- Tabelas de fato
 -- Inserindo na tabela de avaliações novos registros.
 INSERT INTO dw_alv.Avaliacoes
@@ -589,10 +601,10 @@ SELECT
     a.Nota,
     CAST(to_char(a.AvaliacaoData, 'HH24:MI:SS') AS TIME) AS HORA
 FROM
-    Avaliacao a INNER JOIN Filme f ON a.FilmeID = f.FilmeID
-    INNER JOIN Filme_GeneroFilme g ON g.FilmeID = f.FilmeID
-    INNER JOIN Produtora p ON p.ProdutoraID = f.ProdutoraID
-    INNER JOIN Usuario u ON a.UsuarioID = u.UsuarioID
+    audit.ins_Avaliacao a INNER JOIN alv.Filme f ON a.FilmeID = f.FilmeID
+    INNER JOIN alv.Filme_GeneroFilme g ON g.FilmeID = f.FilmeID
+    INNER JOIN alv.Produtora p ON p.ProdutoraID = f.ProdutoraID
+    INNER JOIN alv.Usuario u ON a.UsuarioID = u.UsuarioID
     INNER JOIN dw_alv.Genero dwg ON g.GeneroFilme = dwg.GeneroNome
     INNER JOIN dw_alv.Filme dwf ON f.FilmeID = dwf.FilmeID
     INNER JOIN dw_alv.Produtora dwp ON p.ProdutoraID = dwp.ProdutoraID
@@ -611,7 +623,6 @@ SELECT
 FROM
     dw_alv.Avaliacoes;
 
-
 -- Inserindo na tabela de receita novos registros.
 INSERT INTO dw_alv.Receita
 SELECT
@@ -622,7 +633,7 @@ SELECT
     up.ValorPago AS Valor,
     CAST(to_char(up.DataPagto, 'HH24:MI:SS') AS TIME) AS Hora
 FROM
-    alv.UsrPagto up INNER JOIN alv.Usuario u ON up.UsuarioID = u.UsuarioID
+    audit.ins_UsrPagto up INNER JOIN alv.Usuario u ON up.UsuarioID = u.UsuarioID
     INNER JOIN dw_alv.Usuario dwu ON u.UsuarioID = dwu.UsuarioID
     INNER JOIN dw_alv.Endereco dwe ON u.Logradouro = dwe.Logradouro
     INNER JOIN dw_alv.Calendario dwc ON up.DataPagto = dwc.DataCompleta
