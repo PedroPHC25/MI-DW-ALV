@@ -98,7 +98,7 @@ WHERE CAST(cal.DataCompleta AS DATE) NOT IN (SELECT DataCompleta FROM dw_alv.Cal
 
 -- Adicionando dados ao fato "Avaliacoes"
 INSERT INTO dw_alv.Avaliacoes
-SELECT
+SELECT DISTINCT ON (a.AvaliacaoID)
     a.AvaliacaoID,
     dwg.GeneroKey,
     dwf.FilmeKey,
@@ -106,7 +106,7 @@ SELECT
     dwc.CalendarioKey,
     dwu.UsuarioKey,
     a.Nota,
-    CAST(to_char(a.AvaliacaoData, 'HH24:MI:SS') AS TIME) AS HORA
+    CAST(to_char(a.AvaliacaoData, 'HH24:MI:SSOF') AS TIME WITH TIME ZONE) AS HORA
 FROM
     Avaliacao a INNER JOIN Filme f ON a.FilmeID = f.FilmeID
     INNER JOIN Filme_GeneroFilme g ON g.FilmeID = f.FilmeID
@@ -116,7 +116,7 @@ FROM
     INNER JOIN dw_alv.Filme dwf ON f.FilmeID = dwf.FilmeID
     INNER JOIN dw_alv.Produtora dwp ON p.ProdutoraID = dwp.ProdutoraID
     INNER JOIN dw_alv.Usuario dwu ON u.UsuarioID = dwu.UsuarioID
-    INNER JOIN dw_alv.Calendario dwc ON a.AvaliacaoData = dwc.DataCompleta
+    INNER JOIN dw_alv.Calendario dwc ON a.AvaliacaoData::date = dwc.DataCompleta
 EXCEPT
 SELECT 
     AvaliacaoID,
@@ -132,18 +132,18 @@ FROM
 
 -- Adicionando dados ao fato Receita
 INSERT INTO dw_alv.Receita
-SELECT
+SELECT DISTINCT ON (up.AssinaturaID)
     up.AssinaturaID,
     dwu.UsuarioKey,
     dwc.CalendarioKey,
     dwe.EnderecoKey,
     up.ValorPago AS Valor,
-    CAST(to_char(up.DataPagto, 'HH24:MI:SS') AS TIME) AS Hora
+    CAST(to_char(up.DataPagto, 'HH24:MI:SSOF') AS TIME WITH TIME ZONE) AS Hora
 FROM
     UsrPagto up INNER JOIN Usuario u ON up.UsuarioID = u.UsuarioID
     INNER JOIN dw_alv.Usuario dwu ON u.UsuarioID = dwu.UsuarioID
     INNER JOIN dw_alv.Endereco dwe ON u.Logradouro = dwe.Logradouro
-    INNER JOIN dw_alv.Calendario dwc ON up.DataPagto = dwc.DataCompleta
+    INNER JOIN dw_alv.Calendario dwc ON up.DataPagto::date = dwc.DataCompleta
 EXCEPT
 SELECT
     AssinaturaID,
