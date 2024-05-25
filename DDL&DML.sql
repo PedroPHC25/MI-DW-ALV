@@ -1,3 +1,8 @@
+DROP SCHEMA IF EXISTS alv CASCADE;
+CREATE SCHEMA alv;
+
+SET search_path TO alv;
+
 CREATE TABLE Produtora (
     ProdutoraID VARCHAR(5) PRIMARY KEY,
     ProdutoraNome VARCHAR(100) NOT NULL

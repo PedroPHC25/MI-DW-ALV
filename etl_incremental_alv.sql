@@ -16,7 +16,7 @@ create table audit.historico_mudancas_alv(
 	schema_name text not null,
 	table_name text not null,
 	user_name text,
-	action_tstamp timestam with time zone not null default current_timestamp,
+	action_tstamp timestamp with time zone not null default current_timestamp,
 	action TEXT NOT NULL check (action in ('I', 'D', 'U')),
 	original_data text,
 	new_data text,
@@ -57,7 +57,7 @@ IF (TG_OP = 'UPDATE') then
 		current_query()
 	);
 	
-	RETURN NEW
+	RETURN NEW;
 ELSIF (TG_OP = 'DELETE') then
 	v_old_data := ROW(OLD.*);
 
@@ -73,7 +73,7 @@ ELSIF (TG_OP = 'DELETE') then
 		TG_TABLE_SCHEMA::TEXT,
 		TG_TABLE_NAME::TEXT,
 		session_user::TEXT,
-		substring(TG_OP,1,1),
+		substring(TG_OP,1,1),D
 		v_old_data,
 		current_query()
 	);
@@ -81,7 +81,7 @@ ELSIF (TG_OP = 'DELETE') then
 ELSIF (TG_OP = 'INSERT') then
 	v_new_data := ROW(NEW.*);
 
-	insert into audit.historico_mudancas_zagi(
+	insert into audit.historico_mudancas_alv(
 		schema_name,
 		table_name,
 		user_name,
@@ -532,7 +532,7 @@ SELECT DISTINCT ON (GeneroFilme)
     gen_random_uuid(),
     fg.GeneroFilme
 FROM
-    alv.Filme_GeneroFilme fg inner join audit.ins_Filme f on f.FilmeID == fg.FilmeID;
+    alv.Filme_GeneroFilme fg inner join audit.ins_Filme f on f.FilmeID = fg.FilmeID;
 
 -- Atualizando dimensão de usuario.
 INSERT INTO dw_alv.Usuario
@@ -559,7 +559,7 @@ SELECT
     u.Bairro,
     u.Logradouro
 FROM
-    alv.Usuario u inner join audit.ins_Usuario au where u.UsuarioID == au.UsuarioID;
+    alv.Usuario u inner join audit.ins_Usuario au ON u.UsuarioID = au.UsuarioID;
 
 -- Atualizando dimensão de calendário.
 INSERT INTO dw_alv.Calendario

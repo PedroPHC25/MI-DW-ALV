@@ -1,7 +1,9 @@
+-- Criando um esquema para armazenar o Data Warehouse
 set search_path to dw_alv;
 
+-- Truncando as tabelas de fatos e deletando as de dimensão
 truncate table Receita;
-truncate table Avaliacao;
+truncate table Avaliacoes;
 
 delete from Calendario;
 delete from Endereco;
@@ -10,8 +12,10 @@ delete from Genero;
 delete from Produtora;
 delete from Usuario;
 
+-- Mudando o search_path para onde os dados estão armazenados
 set search_path to alv;
 
+-- Adicionando dados à dimensão "Produtora"
 INSERT INTO dw_alv.Produtora
 SELECT 
     gen_random_uuid(),
@@ -20,6 +24,7 @@ SELECT
 FROM 
     produtora p;
 
+-- Adicionando dados à dimensão "Filme"
 INSERT INTO dw_alv.Filme
 SELECT
     gen_random_uuid(),
@@ -30,6 +35,7 @@ SELECT
 FROM
     filme f;
 
+-- Adicionando dados à dimensão "Genero"
 INSERT INTO dw_alv.Genero
 SELECT DISTINCT ON (GeneroFilme)
     gen_random_uuid(),
@@ -37,6 +43,7 @@ SELECT DISTINCT ON (GeneroFilme)
 FROM
     Filme_GeneroFilme fg;
 
+-- Adicionando dados à dimensão "Usuário"
 INSERT INTO dw_alv.Usuario
 SELECT
     gen_random_uuid(),
@@ -52,6 +59,7 @@ SELECT
 FROM
     Usuario u;
 
+-- Adicionando dados à dimensão "Endereço"
 INSERT INTO dw_alv.Endereco
 SELECT
     gen_random_uuid(),
@@ -62,6 +70,7 @@ SELECT
 FROM
     Usuario u;
 
+-- Adicionando dados à dimensão "Calendário"
 INSERT INTO dw_alv.Calendario
 SELECT
     gen_random_uuid(),
@@ -87,6 +96,7 @@ FROM(
     ) AS d) AS cal
 WHERE CAST(cal.DataCompleta AS DATE) NOT IN (SELECT DataCompleta FROM dw_alv.Calendario);
 
+-- Adicionando dados ao fato "Avaliacoes"
 INSERT INTO dw_alv.Avaliacoes
 SELECT
     a.AvaliacaoID,
@@ -120,6 +130,7 @@ SELECT
 FROM
     dw_alv.Avaliacoes;
 
+-- Adicionando dados ao fato Receita
 INSERT INTO dw_alv.Receita
 SELECT
     up.AssinaturaID,
