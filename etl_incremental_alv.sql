@@ -33,93 +33,93 @@ DECLARE
 	v_old_data TEXT;
 	v_new_data TEXT;
 BEGIN
+	IF (TG_OP = 'UPDATE') then
+		v_old_data := ROW(OLD.*);
+		v_new_data := ROW(NEW.*);
 
-IF (TG_OP = 'UPDATE') then
-	v_old_data := ROW(OLD.*);
-	v_new_data := ROW(NEW.*);
+		insert into audit.historico_mudancas_alv(
+			schema_name,
+			table_name,
+			user_name,
+			action,
+			original_data,
+			new_data,
+			query
+		)
+		VALUES(
+			TG_TABLE_SCHEMA::TEXT,
+			TG_TABLE_NAME::TEXT,
+			session_user::TEXT,
+			substring(TG_OP,1,1),
+			v_old_data,
+			v_new_data,
+			current_query()
+		);
+		
+		RETURN NEW;
+	ELSIF (TG_OP = 'DELETE') then
+		v_old_data := ROW(OLD.*);
 
-	insert into audit.historico_mudancas_alv(
-		schema_name,
-		table_name,
-		user_name,
-		action,
-		original_data,
-		new_data,
-		query
-	)
-	VALUES(
-		TG_TABLE_SCHEMA::TEXT,
-		TG_TABLE_NAME::TEXT,
-		session_user::TEXT,
-		substring(TG_OP,1,1),
-		v_old_data,
-		v_new_data,
-		current_query()
-	);
-	
-	RETURN NEW;
-ELSIF (TG_OP = 'DELETE') then
-	v_old_data := ROW(OLD.*);
+		insert into audit.historico_mudancas_alv(
+			schema_name,
+			table_name,
+			user_name,
+			action,
+			original_data,
+			query
+		)
+		values(
+			TG_TABLE_SCHEMA::TEXT,
+			TG_TABLE_NAME::TEXT,
+			session_user::TEXT,
+			substring(TG_OP,1,1),
+			v_old_data,
+			current_query()
+		);
+		RETURN OLD;
+	ELSIF (TG_OP = 'INSERT') then
+		v_new_data := ROW(NEW.*);
 
-	insert into audit.historico_mudancas_alv(
-		schema_name,
-		table_name,
-		user_name,
-		action,
-		original_data,
-		query
-	)
-	values(
-		TG_TABLE_SCHEMA::TEXT,
-		TG_TABLE_NAME::TEXT,
-		session_user::TEXT,
-		substring(TG_OP,1,1),
-		v_old_data,
-		current_query()
-	);
-	RETURN OLD;
-ELSIF (TG_OP = 'INSERT') then
-	v_new_data := ROW(NEW.*);
+		insert into audit.historico_mudancas_alv(
+			schema_name,
+			table_name,
+			user_name,
+			action,
+			new_data,
+			query
+		)
+		values(
+			TG_TABLE_SCHEMA::TEXT,
+			TG_TABLE_NAME::TEXT,
+			session_user::TEXT,
+			substring(TG_OP,1,1),
+			v_new_data,
+			current_query()
+		);
+		RETURN NEW;
+	else
+		RAISE WARNING '[AUDIT.IF_MODIFIED_FUNC] - Other action occurred: %, at %',TG_OP,now();
+		RETURN NULL;
+	end if;
 
-	insert into audit.historico_mudancas_alv(
-		schema_name,
-		table_name,
-		user_name,
-		action,
-		new_data,
-		query
-	)
-	values(
-		TG_TABLE_SCHEMA::TEXT,
-		TG_TABLE_NAME::TEXT,
-		session_user::TEXT,
-		substring(TG_OP,1,1),
-		v_new_data,
-		current_query()
-	);
-	RETURN NEW;
-else
-	RAISE WARNING '[AUDIT.IF_MODIFIED_FUNC] - Other action occurred: %, at %',TG_OP,now();
-	RETURN NULL;
-end if;
-
--- Tratando exceções de erros nos dados.
-EXCEPTION
-	-- Erro de tipo.
-	WHEN data_exception THEN
-		RAISE WARNING '[AUDIT.IF_MODIFIED_FUNC] - UDF ERROR [DATA EXCEPTION] - SQLSTATE: %, SQLERRM: %',SQLSTATE,SQLERRM;
-	RETURN NULL;
-	-- Violação de unicidade.
-	WHEN unique_violation THEN
-		RAISE WARNING '[AUDIT.IF_MODIFIED_FUNC] - UDF ERROR [UNIQUE] - SQLSTATE: %, SQLERRM: %',SQLSTATE,SQLERRM;
-	RETURN NULL;
-	WHEN others THEN
-		RAISE WARNING '[AUDIT.IF_MODIFIED_FUNC] - UDF ERROR [OTHER] - SQLSTATE: %, SQLERRM: %',SQLSTATE,SQLERRM;
-	RETURN NULL;
-	-- SQLSTATE e SQLERRM são variáveis que tem código de estado do erro sql e a mensgagem de erro, respectivamente.
+	-- Tratando exceções de erros nos dados.
+	EXCEPTION
+		-- Erro de tipo.
+		WHEN data_exception THEN
+			RAISE WARNING '[AUDIT.IF_MODIFIED_FUNC] - UDF ERROR [DATA EXCEPTION] - SQLSTATE: %, SQLERRM: %',SQLSTATE,SQLERRM;
+		RETURN NULL;
+		-- Violação de unicidade.
+		WHEN unique_violation THEN
+			RAISE WARNING '[AUDIT.IF_MODIFIED_FUNC] - UDF ERROR [UNIQUE] - SQLSTATE: %, SQLERRM: %',SQLSTATE,SQLERRM;
+		RETURN NULL;
+		WHEN others THEN
+			RAISE WARNING '[AUDIT.IF_MODIFIED_FUNC] - UDF ERROR [OTHER] - SQLSTATE: %, SQLERRM: %',SQLSTATE,SQLERRM;
+		RETURN NULL;
+		-- SQLSTATE e SQLERRM são variáveis que tem código de estado do erro sql e a mensgagem de erro, respectivamente.
 END;
-$body$
-LANGUAGE plpgsql
+
+$body$ LANGUAGE plpgsql
+
 SECURITY DEFINER
 SET search_path = pg_catalog, audit;
 
@@ -135,54 +135,55 @@ SET search_path = pg_catalog, audit;
 	que importam para o DW.
 */
 
+-- Esses triggers salvam as mudanças na tabela de auditoria de mudanças no geral.
 -- Produtora
 CREATE TRIGGER Produtora_if_modified_trig
 -- Depois da alguma operação de inserção, atualização ou deleção.
 AFTER INSERT OR UPDATE OR DELETE ON alv.Produtora
 -- Executa a função que registra a operação.
-FOR EACH ROW EXECUTE PROCEDURE audit.if_modified_func();
+FOR EACH ROW EXECUTE FUNCTION audit.if_modified_func();
 
 -- Filme
 CREATE TRIGGER Filme_if_modified_trig
 -- Depois da alguma operação de inserção, atualização ou deleção.
 AFTER INSERT OR UPDATE OR DELETE ON alv.Filme
 -- Executa a função que registra a operação.
-FOR EACH ROW EXECUTE PROCEDURE audit.if_modified_func();
+FOR EACH ROW EXECUTE FUNCTION audit.if_modified_func();
 
 -- Usuario
 CREATE TRIGGER Usuario_if_modified_trig
 -- Depois da alguma operação de inserção, atualização ou deleção.
 AFTER INSERT OR UPDATE OR DELETE ON alv.Usuario
 -- Executa a função que registra a operação.
-FOR EACH ROW EXECUTE PROCEDURE audit.if_modified_func();
+FOR EACH ROW EXECUTE FUNCTION audit.if_modified_func();
 
 -- Filme_GeneroFilme
 CREATE TRIGGER Filme_GeneroFilme_if_modified_trig
 -- Depois da alguma operação de inserção, atualização ou deleção.
 AFTER INSERT OR UPDATE OR DELETE ON alv.Filme_GeneroFilme
 -- Executa a função que registra a operação.
-FOR EACH ROW EXECUTE PROCEDURE audit.if_modified_func();
+FOR EACH ROW EXECUTE FUNCTION audit.if_modified_func();
 
 -- Assinatura
 CREATE TRIGGER Assinatura_if_modified_trig
 -- Depois da alguma operação de inserção, atualização ou deleção.
 AFTER INSERT OR UPDATE OR DELETE ON alv.Assinatura
 -- Executa a função que registra a operação.
-FOR EACH ROW EXECUTE PROCEDURE audit.if_modified_func();
+FOR EACH ROW EXECUTE FUNCTION audit.if_modified_func();
 
 -- UsrPagto
 CREATE TRIGGER UsrPagto_if_modified_trig
 -- Depois da alguma operação de inserção, atualização ou deleção.
 AFTER INSERT OR UPDATE OR DELETE ON alv.UsrPagto
 -- Executa a função que registra a operação.
-FOR EACH ROW EXECUTE PROCEDURE audit.if_modified_func();
+FOR EACH ROW EXECUTE FUNCTION audit.if_modified_func();
 
 -- Avaliacao
 CREATE TRIGGER Avaliacao_if_modified_trig
 -- Depois da alguma operação de inserção, atualização ou deleção.
 AFTER INSERT OR UPDATE OR DELETE ON alv.Avaliacao
 -- Executa a função que registra a operação.
-FOR EACH ROW EXECUTE PROCEDURE audit.if_modified_func();
+FOR EACH ROW EXECUTE FUNCTION audit.if_modified_func();
 
 
 /*
@@ -197,38 +198,43 @@ DECLARE
 	v_old_data TEXT;
 	v_new_data TEXT;
 BEGIN
-if (TG_OP = 'INSERT') then
-	v_new_data := ROW(NEW.*);
-	insert into audit.ins_Produtora values
-	(
-		NEW.ProdutoraID,
-		NEW.ProdutoraNome
-	);
-else
-	RAISE WARNING '[AUDIT.IF_MODIFIED_FUNC] - Other action occurred: %, at %',TG_OP,now();
-	RETURN NULL;
-end if;
+	if (TG_OP = 'INSERT') then
+		v_new_data := ROW(NEW.*);
+		insert into audit.ins_Produtora values
+		(
+			NEW.ProdutoraID,
+			NEW.ProdutoraNome
+		);
 
-EXCEPTION
-	WHEN data_exception THEN
-		RAISE WARNING '[AUDIT.IF_MODIFIED_FUNC] - UDF ERROR [DATA EXCEPTION] - SQLSTATE: %, SQLERRM: %',SQLSTATE,SQLERRM;
+		RETURN NEW;
+	else
+		RAISE WARNING '[AUDIT.IF_MODIFIED_FUNC] - Other action occurred: %, at %',TG_OP,now();
+		
 		RETURN NULL;
-	WHEN unique_violation THEN
-		RAISE WARNING '[AUDIT.IF_MODIFIED_FUNC] - UDF ERROR [UNIQUE] - SQLSTATE: %, SQLERRM: %',SQLSTATE,SQLERRM;
-		RETURN NULL;
-	WHEN others THEN
-		RAISE WARNING '[AUDIT.IF_MODIFIED_FUNC] - UDF ERROR [OTHER] - SQLSTATE: %, SQLERRM: %',SQLSTATE,SQLERRM;
-		RETURN NULL;
+	end if;
+
+	EXCEPTION
+		WHEN data_exception THEN
+			RAISE WARNING '[AUDIT.IF_MODIFIED_FUNC] - UDF ERROR [DATA EXCEPTION] - SQLSTATE: %, SQLERRM: %',SQLSTATE,SQLERRM;
+			
+			RETURN NULL;
+		WHEN unique_violation THEN
+			RAISE WARNING '[AUDIT.IF_MODIFIED_FUNC] - UDF ERROR [UNIQUE] - SQLSTATE: %, SQLERRM: %',SQLSTATE,SQLERRM;
+			
+			RETURN NULL;
+		WHEN others THEN
+			RAISE WARNING '[AUDIT.IF_MODIFIED_FUNC] - UDF ERROR [OTHER] - SQLSTATE: %, SQLERRM: %',SQLSTATE,SQLERRM;
+			
+			RETURN NULL;
 END;
-$body$
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = pg_catalog, audit;
+$body$ LANGUAGE plpgsql
+	SECURITY DEFINER
+	SET search_path = pg_catalog, audit;
 
 -- salvando exatamente a linha recém inserida como uma nova linha em uma tabela "espelho"
 CREATE TRIGGER Produtora_insert_trg
 AFTER INSERT ON alv.Produtora
-FOR EACH ROW EXECUTE PROCEDURE audit.ins_Produtora_func();
+FOR EACH ROW EXECUTE FUNCTION audit.ins_Produtora_func();
 
 -- Filme
 create table audit.ins_Filme as select * from alv.Filme where 1=0;
@@ -248,31 +254,36 @@ if (TG_OP = 'INSERT') then
 		NEW.AnoDeLancamento,
 		NEW.ProdutoraID
 	);
+
+	RETURN NEW;
 else
 	RAISE WARNING '[AUDIT.IF_MODIFIED_FUNC] - Other action occurred: %, at %',TG_OP,now();
+
 	RETURN NULL;
 end if;
 
 EXCEPTION
 	WHEN data_exception THEN
 		RAISE WARNING '[AUDIT.IF_MODIFIED_FUNC] - UDF ERROR [DATA EXCEPTION] - SQLSTATE: %, SQLERRM: %',SQLSTATE,SQLERRM;
+		
 		RETURN NULL;
 	WHEN unique_violation THEN
 		RAISE WARNING '[AUDIT.IF_MODIFIED_FUNC] - UDF ERROR [UNIQUE] - SQLSTATE: %, SQLERRM: %',SQLSTATE,SQLERRM;
+		
 		RETURN NULL;
 	WHEN others THEN
 		RAISE WARNING '[AUDIT.IF_MODIFIED_FUNC] - UDF ERROR [OTHER] - SQLSTATE: %, SQLERRM: %',SQLSTATE,SQLERRM;
+		
 		RETURN NULL;
 END;
-$body$
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = pg_catalog, audit;
+$body$ LANGUAGE plpgsql
+	SECURITY DEFINER
+	SET search_path = pg_catalog, audit;
 
 -- salvando exatamente a linha recém inserida como uma nova linha em uma tabela "espelho"
 CREATE TRIGGER Filme_insert_trg
 AFTER INSERT ON alv.Filme
-FOR EACH ROW EXECUTE PROCEDURE audit.ins_Filme_func();
+FOR EACH ROW EXECUTE FUNCTION audit.ins_Filme_func();
 
 -- Usuario
 create table audit.ins_Usuario as select * from alv.Usuario where 1=0;
@@ -282,49 +293,54 @@ DECLARE
 	v_old_data TEXT;
 	v_new_data TEXT;
 BEGIN
-if (TG_OP = 'INSERT') then
-	v_new_data := ROW(NEW.*);
-	insert into audit.ins_Usuario values
-	(
-		NEW.UsuarioID,
-		NEW.Email,
-		NEW.Telefone,
-		NEW.DataVencimento,
-		NEW.CodigoDeSeguranca,
-		NEW.NumeroDoCartao,
-		NEW.NomeDoProprietario,
-		NEW.Senha,
-		NEW.UsuarioNome,
-		NEW.Bairro,
-		NEW.Municipio,
-		NEW.Estado,
-		NEW.Logradouro
-	);
-else
-	RAISE WARNING '[AUDIT.IF_MODIFIED_FUNC] - Other action occurred: %, at %',TG_OP,now();
-	RETURN NULL;
-end if;
+	if (TG_OP = 'INSERT') then
+		v_new_data := ROW(NEW.*);
+		insert into audit.ins_Usuario values
+		(
+			NEW.UsuarioID,
+			NEW.Email,
+			NEW.Telefone,
+			NEW.DataVencimento,
+			NEW.CodigoDeSeguranca,
+			NEW.NumeroDoCartao,
+			NEW.NomeDoProprietario,
+			NEW.Senha,
+			NEW.UsuarioNome,
+			NEW.Bairro,
+			NEW.Municipio,
+			NEW.Estado,
+			NEW.Logradouro
+		);
 
-EXCEPTION
-	WHEN data_exception THEN
-		RAISE WARNING '[AUDIT.IF_MODIFIED_FUNC] - UDF ERROR [DATA EXCEPTION] - SQLSTATE: %, SQLERRM: %',SQLSTATE,SQLERRM;
+		RETURN NEW;
+	else
+		RAISE WARNING '[AUDIT.IF_MODIFIED_FUNC] - Other action occurred: %, at %',TG_OP,now();
+		
 		RETURN NULL;
-	WHEN unique_violation THEN
-		RAISE WARNING '[AUDIT.IF_MODIFIED_FUNC] - UDF ERROR [UNIQUE] - SQLSTATE: %, SQLERRM: %',SQLSTATE,SQLERRM;
-		RETURN NULL;
-	WHEN others THEN
-		RAISE WARNING '[AUDIT.IF_MODIFIED_FUNC] - UDF ERROR [OTHER] - SQLSTATE: %, SQLERRM: %',SQLSTATE,SQLERRM;
-		RETURN NULL;
+	end if;
+
+	EXCEPTION
+		WHEN data_exception THEN
+			RAISE WARNING '[AUDIT.IF_MODIFIED_FUNC] - UDF ERROR [DATA EXCEPTION] - SQLSTATE: %, SQLERRM: %',SQLSTATE,SQLERRM;
+			
+			RETURN NULL;
+		WHEN unique_violation THEN
+			RAISE WARNING '[AUDIT.IF_MODIFIED_FUNC] - UDF ERROR [UNIQUE] - SQLSTATE: %, SQLERRM: %',SQLSTATE,SQLERRM;
+			
+			RETURN NULL;
+		WHEN others THEN
+			RAISE WARNING '[AUDIT.IF_MODIFIED_FUNC] - UDF ERROR [OTHER] - SQLSTATE: %, SQLERRM: %',SQLSTATE,SQLERRM;
+			
+			RETURN NULL;
 END;
-$body$
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = pg_catalog, audit;
+$body$ LANGUAGE plpgsql
+	SECURITY DEFINER
+	SET search_path = pg_catalog, audit;
 
 -- salvando exatamente a linha recém inserida como uma nova linha em uma tabela "espelho"
 CREATE TRIGGER Usuario_insert_trg
 AFTER INSERT ON alv.Usuario
-FOR EACH ROW EXECUTE PROCEDURE audit.ins_Usuario_func();
+FOR EACH ROW EXECUTE FUNCTION audit.ins_Usuario_func();
 
 -- Filme_GeneroFilme
 create table audit.ins_Filme_GeneroFilme as select * from alv.Filme_GeneroFilme where 1=0;
@@ -334,38 +350,43 @@ DECLARE
 	v_old_data TEXT;
 	v_new_data TEXT;
 BEGIN
-if (TG_OP = 'INSERT') then
-	v_new_data := ROW(NEW.*);
-	insert into audit.ins_Filme_GeneroFilme values
-	(
-		NEW.FilmeID,
-		NEW.GeneroFilme
-	);
-else
-	RAISE WARNING '[AUDIT.IF_MODIFIED_FUNC] - Other action occurred: %, at %',TG_OP,now();
-	RETURN NULL;
-end if;
+	if (TG_OP = 'INSERT') then
+		v_new_data := ROW(NEW.*);
+		insert into audit.ins_Filme_GeneroFilme values
+		(
+			NEW.FilmeID,
+			NEW.GeneroFilme
+		);
 
-EXCEPTION
-	WHEN data_exception THEN
-		RAISE WARNING '[AUDIT.IF_MODIFIED_FUNC] - UDF ERROR [DATA EXCEPTION] - SQLSTATE: %, SQLERRM: %',SQLSTATE,SQLERRM;
+		RETURN NEW;
+	else
+		RAISE WARNING '[AUDIT.IF_MODIFIED_FUNC] - Other action occurred: %, at %',TG_OP,now();
+		
 		RETURN NULL;
-	WHEN unique_violation THEN
-		RAISE WARNING '[AUDIT.IF_MODIFIED_FUNC] - UDF ERROR [UNIQUE] - SQLSTATE: %, SQLERRM: %',SQLSTATE,SQLERRM;
-		RETURN NULL;
-	WHEN others THEN
-		RAISE WARNING '[AUDIT.IF_MODIFIED_FUNC] - UDF ERROR [OTHER] - SQLSTATE: %, SQLERRM: %',SQLSTATE,SQLERRM;
-		RETURN NULL;
+	end if;
+
+	EXCEPTION
+		WHEN data_exception THEN
+			RAISE WARNING '[AUDIT.IF_MODIFIED_FUNC] - UDF ERROR [DATA EXCEPTION] - SQLSTATE: %, SQLERRM: %',SQLSTATE,SQLERRM;
+			
+			RETURN NULL;
+		WHEN unique_violation THEN
+			RAISE WARNING '[AUDIT.IF_MODIFIED_FUNC] - UDF ERROR [UNIQUE] - SQLSTATE: %, SQLERRM: %',SQLSTATE,SQLERRM;
+			
+			RETURN NULL;
+		WHEN others THEN
+			RAISE WARNING '[AUDIT.IF_MODIFIED_FUNC] - UDF ERROR [OTHER] - SQLSTATE: %, SQLERRM: %',SQLSTATE,SQLERRM;
+			
+			RETURN NULL;
 END;
-$body$
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = pg_catalog, audit;
+$body$ LANGUAGE plpgsql
+	SECURITY DEFINER
+	SET search_path = pg_catalog, audit;
 
 -- salvando exatamente a linha recém inserida como uma nova linha em uma tabela "espelho"
 CREATE TRIGGER Filme_GeneroFilme_insert_trg
 AFTER INSERT ON alv.Filme_GeneroFilme
-FOR EACH ROW EXECUTE PROCEDURE audit.ins_Filme_GeneroFilme_func();
+FOR EACH ROW EXECUTE FUNCTION audit.ins_Filme_GeneroFilme_func();
 
 -- Assinatura
 create table audit.ins_Assinatura as select * from alv.Assinatura where 1=0;
@@ -375,41 +396,46 @@ DECLARE
 	v_old_data TEXT;
 	v_new_data TEXT;
 BEGIN
-if (TG_OP = 'INSERT') then
-	v_new_data := ROW(NEW.*);
-	insert into audit.ins_Assinatura values
-	(
-		NEW.AssinaturaID,
-		NEW.DataInicio,
-		NEW.DataFim,
-		NEW.Status,
-		NEW.PlanoID
-	);
-else
-	RAISE WARNING '[AUDIT.IF_MODIFIED_FUNC] - Other action occurred: %, at %',TG_OP,now();
-	RETURN NULL;
-end if;
+	if (TG_OP = 'INSERT') then
+		v_new_data := ROW(NEW.*);
+		insert into audit.ins_Assinatura values
+		(
+			NEW.AssinaturaID,
+			NEW.DataInicio,
+			NEW.DataFim,
+			NEW.Status,
+			NEW.PlanoID
+		);
 
-EXCEPTION
-	WHEN data_exception THEN
-		RAISE WARNING '[AUDIT.IF_MODIFIED_FUNC] - UDF ERROR [DATA EXCEPTION] - SQLSTATE: %, SQLERRM: %',SQLSTATE,SQLERRM;
+		RETURN NEW;
+	else
+		RAISE WARNING '[AUDIT.IF_MODIFIED_FUNC] - Other action occurred: %, at %',TG_OP,now();
+
 		RETURN NULL;
-	WHEN unique_violation THEN
-		RAISE WARNING '[AUDIT.IF_MODIFIED_FUNC] - UDF ERROR [UNIQUE] - SQLSTATE: %, SQLERRM: %',SQLSTATE,SQLERRM;
-		RETURN NULL;
-	WHEN others THEN
-		RAISE WARNING '[AUDIT.IF_MODIFIED_FUNC] - UDF ERROR [OTHER] - SQLSTATE: %, SQLERRM: %',SQLSTATE,SQLERRM;
-		RETURN NULL;
+	end if;
+
+	EXCEPTION
+		WHEN data_exception THEN
+			RAISE WARNING '[AUDIT.IF_MODIFIED_FUNC] - UDF ERROR [DATA EXCEPTION] - SQLSTATE: %, SQLERRM: %',SQLSTATE,SQLERRM;
+			
+			RETURN NULL;
+		WHEN unique_violation THEN
+			RAISE WARNING '[AUDIT.IF_MODIFIED_FUNC] - UDF ERROR [UNIQUE] - SQLSTATE: %, SQLERRM: %',SQLSTATE,SQLERRM;
+			
+			RETURN NULL;
+		WHEN others THEN
+			RAISE WARNING '[AUDIT.IF_MODIFIED_FUNC] - UDF ERROR [OTHER] - SQLSTATE: %, SQLERRM: %',SQLSTATE,SQLERRM;
+			
+			RETURN NULL;
 END;
-$body$
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = pg_catalog, audit;
+$body$ LANGUAGE plpgsql
+	SECURITY DEFINER
+	SET search_path = pg_catalog, audit;
 
 -- salvando exatamente a linha recém inserida como uma nova linha em uma tabela "espelho"
 CREATE TRIGGER Assinatura_insert_trg
 AFTER INSERT ON alv.Assinatura
-FOR EACH ROW EXECUTE PROCEDURE audit.ins_Assinatura_func();
+FOR EACH ROW EXECUTE FUNCTION audit.ins_Assinatura_func();
 
 -- UsrPagto
 create table audit.ins_UsrPagto as select * from alv.UsrPagto where 1=0;
@@ -419,40 +445,45 @@ DECLARE
 	v_old_data TEXT;
 	v_new_data TEXT;
 BEGIN
-if (TG_OP = 'INSERT') then
-	v_new_data := ROW(NEW.*);
-	insert into audit.ins_UsrPagto values
-	(
-		NEW.UsuarioID,
-		NEW.AssinaturaID,
-		NEW.ValorPago,
-		NEW.DataPagto
-	);
-else
-	RAISE WARNING '[AUDIT.IF_MODIFIED_FUNC] - Other action occurred: %, at %',TG_OP,now();
-	RETURN NULL;
-end if;
+	if (TG_OP = 'INSERT') then
+		v_new_data := ROW(NEW.*);
+		insert into audit.ins_UsrPagto values
+		(
+			NEW.UsuarioID,
+			NEW.AssinaturaID,
+			NEW.ValorPago,
+			NEW.DataPagto
+		);
 
-EXCEPTION
-	WHEN data_exception THEN
-		RAISE WARNING '[AUDIT.IF_MODIFIED_FUNC] - UDF ERROR [DATA EXCEPTION] - SQLSTATE: %, SQLERRM: %',SQLSTATE,SQLERRM;
+		RETURN NEW;
+	else
+		RAISE WARNING '[AUDIT.IF_MODIFIED_FUNC] - Other action occurred: %, at %',TG_OP,now();
+		
 		RETURN NULL;
-	WHEN unique_violation THEN
-		RAISE WARNING '[AUDIT.IF_MODIFIED_FUNC] - UDF ERROR [UNIQUE] - SQLSTATE: %, SQLERRM: %',SQLSTATE,SQLERRM;
-		RETURN NULL;
-	WHEN others THEN
-		RAISE WARNING '[AUDIT.IF_MODIFIED_FUNC] - UDF ERROR [OTHER] - SQLSTATE: %, SQLERRM: %',SQLSTATE,SQLERRM;
-		RETURN NULL;
+	end if;
+
+	EXCEPTION
+		WHEN data_exception THEN
+			RAISE WARNING '[AUDIT.IF_MODIFIED_FUNC] - UDF ERROR [DATA EXCEPTION] - SQLSTATE: %, SQLERRM: %',SQLSTATE,SQLERRM;
+			
+			RETURN NULL;
+		WHEN unique_violation THEN
+			RAISE WARNING '[AUDIT.IF_MODIFIED_FUNC] - UDF ERROR [UNIQUE] - SQLSTATE: %, SQLERRM: %',SQLSTATE,SQLERRM;
+			
+			RETURN NULL;
+		WHEN others THEN
+			RAISE WARNING '[AUDIT.IF_MODIFIED_FUNC] - UDF ERROR [OTHER] - SQLSTATE: %, SQLERRM: %',SQLSTATE,SQLERRM;
+			
+			RETURN NULL;
 END;
-$body$
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = pg_catalog, audit;
+$body$ LANGUAGE plpgsql
+	SECURITY DEFINER
+	SET search_path = pg_catalog, audit;
 
 -- salvando exatamente a linha recém inserida como uma nova linha em uma tabela "espelho"
 CREATE TRIGGER UsrPagto_insert_trg
 AFTER INSERT ON alv.UsrPagto
-FOR EACH ROW EXECUTE PROCEDURE audit.ins_UsrPagto_func();
+FOR EACH ROW EXECUTE FUNCTION audit.ins_UsrPagto_func();
 
 -- Avaliacao
 create table audit.ins_Avaliacao as select * from alv.Avaliacao where 1=0;
@@ -462,43 +493,48 @@ DECLARE
 	v_old_data TEXT;
 	v_new_data TEXT;
 BEGIN
-if (TG_OP = 'INSERT') then
-	v_new_data := ROW(NEW.*);
-	insert into audit.ins_Avaliacao values
-	(
-		NEW.AvaliacaoID,
-		NEW.Comentario,
-		NEW.AvaliacaoData,
-		NEW.Nota,
-		NEW.UsuarioID,
-		NEW.FilmeID,
-		NEW.AssinaturaID
-	);
-else
-	RAISE WARNING '[AUDIT.IF_MODIFIED_FUNC] - Other action occurred: %, at %',TG_OP,now();
-	RETURN NULL;
-end if;
+	if (TG_OP = 'INSERT') then
+		v_new_data := ROW(NEW.*);
+		insert into audit.ins_Avaliacao values
+		(
+			NEW.AvaliacaoID,
+			NEW.Comentario,
+			NEW.AvaliacaoData,
+			NEW.Nota,
+			NEW.UsuarioID,
+			NEW.FilmeID,
+			NEW.AssinaturaID
+		);
 
-EXCEPTION
-	WHEN data_exception THEN
-		RAISE WARNING '[AUDIT.IF_MODIFIED_FUNC] - UDF ERROR [DATA EXCEPTION] - SQLSTATE: %, SQLERRM: %',SQLSTATE,SQLERRM;
+		RETURN NEW;
+	else
+		RAISE WARNING '[AUDIT.IF_MODIFIED_FUNC] - Other action occurred: %, at %',TG_OP,now();
+
 		RETURN NULL;
-	WHEN unique_violation THEN
-		RAISE WARNING '[AUDIT.IF_MODIFIED_FUNC] - UDF ERROR [UNIQUE] - SQLSTATE: %, SQLERRM: %',SQLSTATE,SQLERRM;
-		RETURN NULL;
-	WHEN others THEN
-		RAISE WARNING '[AUDIT.IF_MODIFIED_FUNC] - UDF ERROR [OTHER] - SQLSTATE: %, SQLERRM: %',SQLSTATE,SQLERRM;
-		RETURN NULL;
+	end if;
+
+	EXCEPTION
+		WHEN data_exception THEN
+			RAISE WARNING '[AUDIT.IF_MODIFIED_FUNC] - UDF ERROR [DATA EXCEPTION] - SQLSTATE: %, SQLERRM: %',SQLSTATE,SQLERRM;
+			
+			RETURN NULL;
+		WHEN unique_violation THEN
+			RAISE WARNING '[AUDIT.IF_MODIFIED_FUNC] - UDF ERROR [UNIQUE] - SQLSTATE: %, SQLERRM: %',SQLSTATE,SQLERRM;
+			
+			RETURN NULL;
+		WHEN others THEN
+			RAISE WARNING '[AUDIT.IF_MODIFIED_FUNC] - UDF ERROR [OTHER] - SQLSTATE: %, SQLERRM: %',SQLSTATE,SQLERRM;
+			
+			RETURN NULL;
 END;
-$body$
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = pg_catalog, audit;
+$body$ LANGUAGE plpgsql
+	SECURITY DEFINER
+	SET search_path = pg_catalog, audit;
 
 -- salvando exatamente a linha recém inserida como uma nova linha em uma tabela "espelho"
 CREATE TRIGGER Avaliacao_insert_trg
 AFTER INSERT ON alv.Avaliacao
-FOR EACH ROW EXECUTE PROCEDURE audit.ins_Avaliacao_func();
+FOR EACH ROW EXECUTE FUNCTION audit.ins_Avaliacao_func();
 
 
 /*
