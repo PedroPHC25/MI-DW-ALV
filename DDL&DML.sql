@@ -73,7 +73,7 @@ CREATE TABLE UsrPagto (
     UsuarioID VARCHAR(5),
     AssinaturaID VARCHAR(7),
     ValorPago DECIMAL(10, 2),
-    DataPagto DATE,
+    DataPagto TIMESTAMPTZ,
     PRIMARY KEY (UsuarioID, AssinaturaID),
     FOREIGN KEY (UsuarioID) REFERENCES Usuario(UsuarioID),
     FOREIGN KEY (AssinaturaID) REFERENCES Assinatura(AssinaturaID)
@@ -91,7 +91,7 @@ CREATE TABLE Assiste (
 CREATE TABLE Avaliacao (
     AvaliacaoID VARCHAR(5) PRIMARY KEY,
     Comentario TEXT,
-    AvaliacaoData DATE,
+    AvaliacaoData TIMESTAMPTZ,
     Nota INT,
     UsuarioID VARCHAR(5),
     FilmeID VARCHAR(5),
@@ -196,9 +196,9 @@ INSERT INTO Assinatura (AssinaturaID, DataInicio, DataFim, Status, PlanoID) VALU
 
 -- Inserindo dados na tabela UsrPagto
 INSERT INTO UsrPagto (UsuarioID, AssinaturaID, ValorPago, DataPagto) VALUES
-('U1', 'Ass1', 10, '2023-11-16'),
-('U2', 'Ass2', 30, '2023-07-02'),
-('U3', 'Ass3', 40, '2024-02-28');
+('U1', 'Ass1', 10, '2023-11-16 11:01:20-03'),
+('U2', 'Ass2', 30, '2023-07-02 07:12:45-03'),
+('U3', 'Ass3', 40, '2024-02-28 23:59:59-03');
 
 -- Inserindo dados na tabela Assiste
 INSERT INTO Assiste (UsuarioID, FilmeID, Data) VALUES
@@ -209,9 +209,9 @@ INSERT INTO Assiste (UsuarioID, FilmeID, Data) VALUES
 
 -- Inserindo dados na tabela Avaliacao
 INSERT INTO Avaliacao (AvaliacaoID, Comentario, AvaliacaoData, Nota, UsuarioID, FilmeID, AssinaturaID) VALUES
-('A1', 'Uma introdução mágica e encantadora ao mundo de Hogwarts, perfeita para todas as idades.', '2023-04-17', 5, 'U1', 'F1', 'Ass1'),
-('A2', 'Uma épica jornada de ficção científica que combina emoção e ciência de forma brilhante.', '2023-08-01', 6, 'U2', 'F2', 'Ass2'),
-('A3', NULL, '2023-08-02', 8, 'U3', 'F3', 'Ass3');
+('A1', 'Uma introdução mágica e encantadora ao mundo de Hogwarts, perfeita para todas as idades.', '2023-04-17 18:02:23-03', 5, 'U1', 'F1', 'Ass1'),
+('A2', 'Uma épica jornada de ficção científica que combina emoção e ciência de forma brilhante.', '2023-08-01 12:45:37-03', 6, 'U2', 'F2', 'Ass2'),
+('A3', NULL, '2023-08-02 13:21:48-03', 8, 'U3', 'F3', 'Ass3');
 
 -- Inserindo dados na tabela Cargo
 INSERT INTO Cargo (CargoID, CargoNome) VALUES
