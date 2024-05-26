@@ -683,3 +683,13 @@ SELECT
     Hora
 FROM
     dw_alv.Receita;
+
+-- No fim da adição dos novos dados as tabelas temporárias de auditoria devem
+-- ser truncadas.
+truncate table audit.ins_Produtora;
+truncate table audit.ins_Filme;
+truncate table audit.ins_Usuario;
+truncate table audit.ins_Filme_GeneroFilme;
+truncate table audit.ins_Assinatura;
+truncate table audit.ins_UsrPagto;
+truncate table audit.ins_Avaliacao;
