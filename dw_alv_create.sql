@@ -66,7 +66,7 @@ CREATE TABLE Produtora
   PRIMARY KEY (ProdutoraKey)
 );
 
-CREATE TABLE Avaliacoes
+CREATE TABLE Avaliacao
 (
   AvaliacaoID VARCHAR NOT NULL,
   GeneroKey VARCHAR NOT NULL,

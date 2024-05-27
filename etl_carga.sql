@@ -3,7 +3,7 @@ set search_path to dw_alv;
 
 -- Truncando as tabelas de fatos e deletando as de dimensão
 truncate table Receita;
-truncate table Avaliacoes;
+truncate table Avaliacao;
 
 delete from Calendario;
 delete from Endereco;
@@ -96,8 +96,8 @@ FROM(
     ) AS d) AS cal
 WHERE CAST(cal.DataCompleta AS DATE) NOT IN (SELECT DataCompleta FROM dw_alv.Calendario);
 
--- Adicionando dados ao fato "Avaliacoes"
-INSERT INTO dw_alv.Avaliacoes
+-- Adicionando dados ao fato "Avaliacao"
+INSERT INTO dw_alv.Avaliacao
 SELECT DISTINCT ON (a.AvaliacaoID)
     a.AvaliacaoID,
     dwg.GeneroKey,
@@ -128,7 +128,7 @@ SELECT
     Nota,
     Hora
 FROM
-    dw_alv.Avaliacoes;
+    dw_alv.Avaliacao;
 
 -- Adicionando dados ao fato Receita
 INSERT INTO dw_alv.Receita

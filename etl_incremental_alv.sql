@@ -491,16 +491,16 @@ AFTER INSERT ON alv.UsrPagto
 FOR EACH ROW EXECUTE FUNCTION audit.ins_UsrPagto_func();
 
 -- Avaliacao
-create table audit.ins_Avaliacoes as select * from alv.Avaliacao where 1=0;
+create table audit.ins_Avaliacao as select * from alv.Avaliacao where 1=0;
 
-create or replace function audit.ins_Avaliacoes_func() returns trigger as $body$
+create or replace function audit.ins_Avaliacao_func() returns trigger as $body$
 DECLARE
 	v_old_data TEXT;
 	v_new_data TEXT;
 BEGIN
 	if (TG_OP = 'INSERT') then
 		v_new_data := ROW(NEW.*);
-		insert into audit.ins_Avaliacoes values
+		insert into audit.ins_Avaliacao values
 		(
 			NEW.AvaliacaoID,
 			NEW.Comentario,
@@ -539,7 +539,7 @@ $body$ LANGUAGE plpgsql
 -- salvando exatamente a linha recém inserida como uma nova linha em uma tabela "espelho"
 CREATE TRIGGER Avaliacao_insert_trg
 AFTER INSERT ON alv.Avaliacao
-FOR EACH ROW EXECUTE FUNCTION audit.ins_Avaliacoes_func();
+FOR EACH ROW EXECUTE FUNCTION audit.ins_Avaliacao_func();
 
 -- Inserção de novos valores no esquema relacional.
 -- Obs: como não houve preocupação com a consistência na adição de datas,
@@ -649,7 +649,7 @@ WHERE CAST(cal.DataCompleta AS DATE) NOT IN (SELECT DataCompleta FROM dw_alv.Cal
 
 -- Tabelas de fato
 -- Inserindo na tabela de avaliações novos registros.
-INSERT INTO dw_alv.Avaliacoes
+INSERT INTO dw_alv.Avaliacao
 SELECT DISTINCT ON (a.AvaliacaoID)
     a.AvaliacaoID,
     dwg.GeneroKey,
@@ -660,7 +660,7 @@ SELECT DISTINCT ON (a.AvaliacaoID)
     a.Nota,
     CAST(to_char(a.AvaliacaoData, 'HH24:MI:SSOF') AS TIME WITH TIME ZONE) AS HORA
 FROM
-    audit.ins_Avaliacoes a INNER JOIN alv.Filme f ON a.FilmeID = f.FilmeID
+    audit.ins_Avaliacao a INNER JOIN alv.Filme f ON a.FilmeID = f.FilmeID
     INNER JOIN alv.Filme_GeneroFilme g ON g.FilmeID = f.FilmeID
     INNER JOIN alv.Produtora p ON p.ProdutoraID = f.ProdutoraID
     INNER JOIN alv.Usuario u ON a.UsuarioID = u.UsuarioID
@@ -680,7 +680,7 @@ SELECT
     Nota,
     Hora
 FROM
-    dw_alv.Avaliacoes;
+    dw_alv.Avaliacao;
 
 -- Inserindo na tabela de receita novos registros.
 INSERT INTO dw_alv.Receita
@@ -715,4 +715,4 @@ truncate table audit.ins_Usuario;
 truncate table audit.ins_Filme_GeneroFilme;
 truncate table audit.ins_Assinatura;
 truncate table audit.ins_UsrPagto;
-truncate table audit.ins_Avaliacoes;
+truncate table audit.ins_Avaliacao;
