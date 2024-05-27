@@ -486,16 +486,16 @@ AFTER INSERT ON alv.UsrPagto
 FOR EACH ROW EXECUTE FUNCTION audit.ins_UsrPagto_func();
 
 -- Avaliacao
-create table audit.ins_Avaliacao as select * from alv.Avaliacao where 1=0;
+create table audit.ins_Avaliacoes as select * from alv.Avaliacao where 1=0;
 
-create or replace function audit.ins_Avaliacao_func() returns trigger as $body$
+create or replace function audit.ins_Avaliacoes_func() returns trigger as $body$
 DECLARE
 	v_old_data TEXT;
 	v_new_data TEXT;
 BEGIN
 	if (TG_OP = 'INSERT') then
 		v_new_data := ROW(NEW.*);
-		insert into audit.ins_Avaliacao values
+		insert into audit.ins_Avaliacoes values
 		(
 			NEW.AvaliacaoID,
 			NEW.Comentario,
@@ -534,7 +534,7 @@ $body$ LANGUAGE plpgsql
 -- salvando exatamente a linha recém inserida como uma nova linha em uma tabela "espelho"
 CREATE TRIGGER Avaliacao_insert_trg
 AFTER INSERT ON alv.Avaliacao
-FOR EACH ROW EXECUTE FUNCTION audit.ins_Avaliacao_func();
+FOR EACH ROW EXECUTE FUNCTION audit.ins_Avaliacoes_func();
 
 
 /*
@@ -627,7 +627,7 @@ WHERE CAST(cal.DataCompleta AS DATE) NOT IN (SELECT DataCompleta FROM dw_alv.Cal
 -- Tabelas de fato
 -- Inserindo na tabela de avaliações novos registros.
 INSERT INTO dw_alv.Avaliacoes
-SELECT
+SELECT DISTINCT ON (a.AvaliacaoID)
     a.AvaliacaoID,
     dwg.GeneroKey,
     dwf.FilmeKey,
@@ -635,9 +635,9 @@ SELECT
     dwc.CalendarioKey,
     dwu.UsuarioKey,
     a.Nota,
-    CAST(to_char(a.AvaliacaoData, 'HH24:MI:SS') AS TIME) AS HORA
+    CAST(to_char(a.AvaliacaoData, 'HH24:MI:SSOF') AS TIME WITH TIME ZONE) AS HORA
 FROM
-    audit.ins_Avaliacao a INNER JOIN alv.Filme f ON a.FilmeID = f.FilmeID
+    audit.ins_Avaliacoes a INNER JOIN alv.Filme f ON a.FilmeID = f.FilmeID
     INNER JOIN alv.Filme_GeneroFilme g ON g.FilmeID = f.FilmeID
     INNER JOIN alv.Produtora p ON p.ProdutoraID = f.ProdutoraID
     INNER JOIN alv.Usuario u ON a.UsuarioID = u.UsuarioID
@@ -645,7 +645,7 @@ FROM
     INNER JOIN dw_alv.Filme dwf ON f.FilmeID = dwf.FilmeID
     INNER JOIN dw_alv.Produtora dwp ON p.ProdutoraID = dwp.ProdutoraID
     INNER JOIN dw_alv.Usuario dwu ON u.UsuarioID = dwu.UsuarioID
-    INNER JOIN dw_alv.Calendario dwc ON a.AvaliacaoData = dwc.DataCompleta
+    INNER JOIN dw_alv.Calendario dwc ON a.AvaliacaoData::date = dwc.DataCompleta
 EXCEPT
 SELECT 
     AvaliacaoID,
@@ -667,12 +667,12 @@ SELECT
     dwc.CalendarioKey,
     dwe.EnderecoKey,
     up.ValorPago AS Valor,
-    CAST(to_char(up.DataPagto, 'HH24:MI:SS') AS TIME) AS Hora
+    CAST(to_char(up.DataPagto, 'HH24:MI:SSOF') AS TIME WITH TIME ZONE) AS Hora
 FROM
     audit.ins_UsrPagto up INNER JOIN alv.Usuario u ON up.UsuarioID = u.UsuarioID
     INNER JOIN dw_alv.Usuario dwu ON u.UsuarioID = dwu.UsuarioID
     INNER JOIN dw_alv.Endereco dwe ON u.Logradouro = dwe.Logradouro
-    INNER JOIN dw_alv.Calendario dwc ON up.DataPagto = dwc.DataCompleta
+    INNER JOIN dw_alv.Calendario dwc ON up.DataPagto::date = dwc.DataCompleta
 EXCEPT
 SELECT 
     AssinaturaID,
@@ -692,4 +692,4 @@ truncate table audit.ins_Usuario;
 truncate table audit.ins_Filme_GeneroFilme;
 truncate table audit.ins_Assinatura;
 truncate table audit.ins_UsrPagto;
-truncate table audit.ins_Avaliacao;
+truncate table audit.ins_Avaliacoes;
