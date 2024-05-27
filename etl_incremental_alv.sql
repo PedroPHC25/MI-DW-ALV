@@ -635,12 +635,16 @@ FROM
     audit.ins_filme f;
 
 -- Atualizando dimensão de genero.
-INSERT INTO dw_alv.Genero
-SELECT DISTINCT ON (GeneroFilme)
-    gen_random_uuid(),
-    fg.GeneroFilme
+INSERT INTO dw_alv.Genero (generokey, generonome)
+SELECT DISTINCT ON (generonome)
+    gen_random_uuid() AS generokey,
+    fg.GeneroFilme AS generonome
 FROM
-    alv.Filme_GeneroFilme fg inner join audit.ins_Filme f on f.FilmeID = fg.FilmeID;
+    audit.ins_Filme_GeneroFilme fg
+WHERE
+    fg.GeneroFilme NOT IN (
+        SELECT generonome FROM dw_alv.Genero
+    );
 
 -- Atualizando dimensão de usuario.
 INSERT INTO dw_alv.Usuario
@@ -699,7 +703,7 @@ WHERE CAST(cal.DataCompleta AS DATE) NOT IN (SELECT DataCompleta FROM dw_alv.Cal
 -- Tabelas de fato
 -- Inserindo na tabela de avaliações novos registros.
 INSERT INTO dw_alv.Avaliacao
-SELECT DISTINCT ON (a.AvaliacaoID)
+SELECT
     a.AvaliacaoID,
     dwg.GeneroKey,
     dwf.FilmeKey,
@@ -709,8 +713,8 @@ SELECT DISTINCT ON (a.AvaliacaoID)
     a.Nota,
     CAST(to_char(a.AvaliacaoData, 'HH24:MI:SSOF') AS TIME WITH TIME ZONE) AS HORA
 FROM
-    audit.ins_Avaliacao a INNER JOIN alv.Filme f ON a.FilmeID = f.FilmeID
-    INNER JOIN alv.Filme_GeneroFilme g ON g.FilmeID = f.FilmeID
+    audit.ins_Avaliacao a INNER JOIN audit.ins_Filme f ON a.FilmeID = f.FilmeID
+    INNER JOIN audit.ins_Filme_GeneroFilme g ON g.FilmeID = f.FilmeID
     INNER JOIN alv.Produtora p ON p.ProdutoraID = f.ProdutoraID
     INNER JOIN alv.Usuario u ON a.UsuarioID = u.UsuarioID
     INNER JOIN dw_alv.Genero dwg ON g.GeneroFilme = dwg.GeneroNome

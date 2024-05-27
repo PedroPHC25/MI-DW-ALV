@@ -98,7 +98,7 @@ WHERE CAST(cal.DataCompleta AS DATE) NOT IN (SELECT DataCompleta FROM dw_alv.Cal
 
 -- Adicionando dados ao fato "Avaliacao"
 INSERT INTO dw_alv.Avaliacao
-SELECT DISTINCT ON (a.AvaliacaoID)
+SELECT
     a.AvaliacaoID,
     dwg.GeneroKey,
     dwf.FilmeKey,
