@@ -9,6 +9,11 @@ create schema audit;
 set search_path=audit;
 
 /*
+	Todas as linhas até a 542 são a crição de funções e triggers que salvam as alterações feitas no esquema relacional nas tabelas de auditoria. Dessas, a maioria é feita de tabelas temporárias que tem como objetivo armazenar as últimas mudanças até que o próximo ciclo de adição de dados no etl incremental seja rodado.
+	A partir da linha 542 são rodadas as querys que adicionam os novos dados ao DW baseados nas tabelas de auditoria temporárias criadas. Após essa adição dos dados, as tabelas de auditoria temporárias são todas truncadas para que se inicie um novo ciclo.
+*/
+
+/*
 	Gravar alterações no DW em uma tabela.
 */
 
@@ -535,6 +540,24 @@ $body$ LANGUAGE plpgsql
 CREATE TRIGGER Avaliacao_insert_trg
 AFTER INSERT ON alv.Avaliacao
 FOR EACH ROW EXECUTE FUNCTION audit.ins_Avaliacoes_func();
+
+-- Inserção de novos valores no esquema relacional.
+-- Obs: como não houve preocupação com a consistência na adição de datas,
+-- serão adicionados dois valores à tabela de calendário.
+INSERT INTO alv.Produtora (ProdutoraID, ProdutoraNome) VALUES
+('P4', '20th Century Studios');
+
+INSERT INTO alv.Usuario (UsuarioID, Email, Telefone, DataVencimento, CodigoDeSeguranca, NumeroDoCartao, NomeDoProprietario, Senha, UsuarioNome, Bairro, Municipio, Estado, Logradouro) VALUES
+('U4', 'critico.criticando@example.com', '31987666789', '2024-11-24', 464, '5333333333333333', 'Um Crítico', 'abobrinha123', 'Criticador', 'Buritis', 'Belo Horizonte', 'MG', 'Rua Professor de Melo Neto, 644');
+
+INSERT INTO alv.Assinatura (AssinaturaID, DataInicio, DataFim, Status, PlanoID) VALUES
+('Ass4', '2024-01-30', '2025-01-30', 'Ativo', 'Pl1');
+
+INSERT INTO alv.UsrPagto (UsuarioID, AssinaturaID, ValorPago, DataPagto) VALUES
+('U4', 'Ass4', 10, '2019-02-28 23:59:59-03');
+
+INSERT INTO alv.Avaliacao (AvaliacaoID, Comentario, AvaliacaoData, Nota, UsuarioID, FilmeID, AssinaturaID) VALUES
+('A4', 'O filme é dirigido por Chris Columbos, um diretor limitado e sem imaginação, mas que aqui acerta em planos discretos e cenas ágeis, não arrisca muito. O limitado diretor deixa a alma do filme mesmo para o bom elenco e o roteiro enxuto e bem desenvolvido.', '2019-10-18 18:02:23-03', 4, 'U4', 'F2', 'Ass1');
 
 
 /*
