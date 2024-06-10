@@ -138,6 +138,11 @@ CREATE TABLE FilmPagtoRoy (
     FOREIGN KEY (FilmeID) REFERENCES Filme(FilmeID)
 );
 
+-- Tabela de dados externos.
+CREATE TABLE AvaliacoesIMDb(
+    FilmeNome VARCHAR(200) NOT NULL,
+    Nota REAL NOT NULL
+);
 
 -- Inserindo dados na tabela Produtora
 INSERT INTO Produtora (ProdutoraID, ProdutoraNome) VALUES
@@ -149,7 +154,7 @@ INSERT INTO Produtora (ProdutoraID, ProdutoraNome) VALUES
 INSERT INTO Filme (FilmeID, DuracaoMin, FilmeNome, AnoDeLancamento, ProdutoraID) VALUES
 ('F1', 152, 'Harry Potter e a Pedra Filosofal', 2001, 'P1'),
 ('F2', 169, 'Interestelar', 2014, 'P2'),
-('F3', 127, 'Jurassic Park', 1993, 'P3');
+('F3', 127, 'Jurassic Park - O Parque dos Dinossauros', 1993, 'P3');
 
 -- Inserindo dados na tabela Plano
 INSERT INTO Plano (PlanoID, PrecoMensal, PlanoNome) VALUES
