@@ -32,3 +32,13 @@ CREATE TABLE avaliacoes_IMDb(
     FilmeNome VARCHAR(200) NOT NULL,
     Nota REAL NOT NULL
 );
+
+-- Inserindo os dados manualmente na nova tabela
+INSERT INTO AvaliacoesIMDb (filmenome, nota) VALUES
+('Harry Potter e a Pedra Filosofal', 7.3),
+('Interestelar', 8.7),
+('Central do Brasil', 8.0),
+('Harry Potter e a Pedra Filosofal', 7.6),
+('Estômago', 7.8),
+('Jurassic Park - O Parque dos Dinossauros', 8.2),
+('Que Horas Ela Volta?', 7.7);
