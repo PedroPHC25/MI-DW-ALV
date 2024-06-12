@@ -1050,6 +1050,10 @@ $body$ LANGUAGE plpgsql
 	SECURITY DEFINER
 	SET search_path = pg_catalog, audit;
 
+CREATE TRIGGER Avaliacao_insert_trg
+AFTER INSERT ON alv.Avaliacao
+FOR EACH ROW EXECUTE FUNCTION audit.ins_Avaliacao_func();
+
 -- Tabela de dados externos
 create table audit.ins_AvaliacoesIMDb as select * from alv.AvaliacoesIMDb where 1=0;
 
@@ -1191,7 +1195,13 @@ FROM
 -- Mudando estrutura da tabela de filmes no dw.
 ALTER TABLE dw_alv.Filme
 ADD COLUMN NotaIMDb REAL;
+
 -- Atualizando linhas que já existem
+UPDATE dw_alv.Filme
+SET NotaIMDb = AvaliacoesIMDb.nota
+FROM alv.AvaliacoesIMDb
+WHERE dw_alv.Filme.FilmeNome = alv.AvaliacoesIMDb.FilmeNome
+
 UPDATE dw_alv.Filme
 SET NotaIMDb = 7.3
 WHERE FilmeNome = 'Harry Potter e a Pedra Filosofal';
@@ -1290,12 +1300,12 @@ SELECT
     a.AvaliacaoID,
     dwg.GeneroKey,
     dwf.FilmeKey,
-	dwf.notaimdb,
     dwp.ProdutoraKey,
     dwc.CalendarioKey,
     dwu.UsuarioKey,
     a.Nota,
     CAST(to_char(a.AvaliacaoData, 'HH24:MI:SSOF') AS TIME WITH TIME ZONE) AS HORA
+	-- dwf.notaimdb
 FROM
     audit.ins_Avaliacao a INNER JOIN audit.ins_Filme f ON a.FilmeID = f.FilmeID
     INNER JOIN audit.ins_Filme_GeneroFilme g ON g.FilmeID = f.FilmeID
@@ -1311,12 +1321,12 @@ SELECT
     AvaliacaoID,
     GeneroKey,
     FilmeKey,
-    NotaIMDb,
     ProdutoraKey,
     CalendarioKey,
     UsuarioKey,
     Nota,
     Hora
+    -- NotaIMDb
 FROM
     dw_alv.Avaliacao;
 
