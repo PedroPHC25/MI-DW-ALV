@@ -215,8 +215,8 @@ INSERT INTO Assiste (UsuarioID, FilmeID, Data) VALUES
 -- Inserindo dados na tabela Avaliacao
 INSERT INTO Avaliacao (AvaliacaoID, Comentario, AvaliacaoData, Nota, UsuarioID, FilmeID, AssinaturaID) VALUES
 ('A1', 'Uma introdução mágica e encantadora ao mundo de Hogwarts, perfeita para todas as idades.', '2023-04-17 18:02:23-03', 5, 'U1', 'F1', 'Ass1'),
-('A2', 'Uma épica jornada de ficção científica que combina emoção e ciência de forma brilhante.', '2023-08-01 12:45:37-03', 6, 'U2', 'F2', 'Ass2'),
-('A3', NULL, '2023-08-02 13:21:48-03', 8, 'U3', 'F3', 'Ass3');
+('A2', 'Uma épica jornada de ficção científica que combina emoção e ciência de forma brilhante.', '2023-08-01 12:45:37-03', 4, 'U2', 'F2', 'Ass2'),
+('A3', NULL, '2023-08-02 13:21:48-03', 2, 'U3', 'F3', 'Ass3');
 
 -- Inserindo dados na tabela Cargo
 INSERT INTO Cargo (CargoID, CargoNome) VALUES
