@@ -685,17 +685,6 @@ SET NotaIMDb = AvaliacoesIMDb.nota
 FROM alv.AvaliacoesIMDb
 WHERE dw_alv.Filme.FilmeNome = alv.AvaliacoesIMDb.FilmeNome;
 
--- Atualizando tabela de fatos de avaliações.
--- Mudando estrutura da tabelano dw.
-ALTER TABLE dw_alv.Avaliacao
-ADD COLUMN NotaIMDb REAL;
-
--- Atualizando linhas que já existem
-UPDATE dw_alv.Avaliacao
-SET NotaIMDb = Filme.notaimdb
-FROM dw_alv.Filme
-WHERE dw_alv.Filme.FilmeKey = dw_alv.Avaliacao.FilmeKey;
-
 -- Tabelas de dimensão.
 -- Atualizando dimensão de produtora.
 INSERT INTO dw_alv.Produtora
@@ -798,8 +787,7 @@ SELECT
     dwc.CalendarioKey,
     dwu.UsuarioKey,
     a.Nota,
-    CAST(to_char(a.AvaliacaoData, 'HH24:MI:SSOF') AS TIME WITH TIME ZONE) AS HORA,
-	dwf.notaimdb
+    CAST(to_char(a.AvaliacaoData, 'HH24:MI:SSOF') AS TIME WITH TIME ZONE) AS HORA
 FROM
     audit.ins_Avaliacao a INNER JOIN audit.ins_Filme f ON a.FilmeID = f.FilmeID
     INNER JOIN audit.ins_Filme_GeneroFilme g ON g.FilmeID = f.FilmeID
@@ -819,8 +807,7 @@ SELECT
     CalendarioKey,
     UsuarioKey,
     Nota,
-    Hora,
-    NotaIMDb
+    Hora
 FROM
     dw_alv.Avaliacao;
 
