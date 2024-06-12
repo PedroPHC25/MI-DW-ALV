@@ -1181,16 +1181,6 @@ INSERT INTO AvaliacoesIMDb (filmenome, nota) VALUES
 	Atualizando tabelas do DW.
 */
 
--- Tabelas de dimensão.
--- Atualizando dimensão de produtora.
-INSERT INTO dw_alv.Produtora
-SELECT 
-    gen_random_uuid(),
-    p.ProdutoraID,
-    p.ProdutoraNome
-FROM 
-    audit.ins_produtora p;
-
 -- Atualizando dimensão de filme.
 -- Mudando estrutura da tabela de filmes no dw.
 ALTER TABLE dw_alv.Filme
@@ -1200,17 +1190,28 @@ ADD COLUMN NotaIMDb REAL;
 UPDATE dw_alv.Filme
 SET NotaIMDb = AvaliacoesIMDb.nota
 FROM alv.AvaliacoesIMDb
-WHERE dw_alv.Filme.FilmeNome = alv.AvaliacoesIMDb.FilmeNome
+WHERE dw_alv.Filme.FilmeNome = alv.AvaliacoesIMDb.FilmeNome;
 
-UPDATE dw_alv.Filme
-SET NotaIMDb = 7.3
-WHERE FilmeNome = 'Harry Potter e a Pedra Filosofal';
-UPDATE dw_alv.Filme
-SET NotaIMDb = 8.7
-WHERE FilmeNome = 'Interestelar';
-UPDATE dw_alv.Filme
-SET NotaIMDb = 8.2
-WHERE FilmeNome = 'Jurassic Park - O Parque dos Dinossauros';
+-- Atualizando tabela de fatos de avaliações.
+-- Mudando estrutura da tabelano dw.
+ALTER TABLE dw_alv.Avaliacao
+ADD COLUMN NotaIMDb REAL;
+
+-- Atualizando linhas que já existem
+UPDATE dw_alv.Avaliacao
+SET NotaIMDb = Filme.notaimdb
+FROM dw_alv.Filme
+WHERE dw_alv.Filme.FilmeKey = dw_alv.Avaliacao.FilmeKey;
+
+-- Tabelas de dimensão.
+-- Atualizando dimensão de produtora.
+INSERT INTO dw_alv.Produtora
+SELECT 
+    gen_random_uuid(),
+    p.ProdutoraID,
+    p.ProdutoraNome
+FROM 
+    audit.ins_produtora p;
 
 -- Essa query que adiciona também os dados de fonte externa.
 INSERT INTO dw_alv.Filme
@@ -1304,8 +1305,8 @@ SELECT
     dwc.CalendarioKey,
     dwu.UsuarioKey,
     a.Nota,
-    CAST(to_char(a.AvaliacaoData, 'HH24:MI:SSOF') AS TIME WITH TIME ZONE) AS HORA
-	-- dwf.notaimdb
+    CAST(to_char(a.AvaliacaoData, 'HH24:MI:SSOF') AS TIME WITH TIME ZONE) AS HORA,
+	dwf.notaimdb
 FROM
     audit.ins_Avaliacao a INNER JOIN audit.ins_Filme f ON a.FilmeID = f.FilmeID
     INNER JOIN audit.ins_Filme_GeneroFilme g ON g.FilmeID = f.FilmeID
@@ -1325,8 +1326,8 @@ SELECT
     CalendarioKey,
     UsuarioKey,
     Nota,
-    Hora
-    -- NotaIMDb
+    Hora,
+    NotaIMDb
 FROM
     dw_alv.Avaliacao;
 
