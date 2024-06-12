@@ -651,9 +651,9 @@ INSERT INTO Assiste (UsuarioID, FilmeID, Data) VALUES
 ('U6', 'F6', '2023-09-02');
 
 INSERT INTO Avaliacao (AvaliacaoID, Comentario, AvaliacaoData, Nota, UsuarioID, FilmeID, AssinaturaID) VALUES
-('A4', 'Filme impecável com atuações maravilhosas. Me emocionei muito!', '2024-01-29 01:29:23-03', 10, 'U4', 'F4', 'Ass4'),
-('A5', 'A intercalação entre passado, presente e futuro neste filme torna-o uma experiência única.', '2023-07-16 16:07:21-03', 9, 'U5', 'F5', 'Ass5'),
-('A6', NULL, '2023-09-02 09:02:23-03', 8, 'U6', 'F6', 'Ass6');
+('A4', 'Filme impecável com atuações maravilhosas. Me emocionei muito!', '2024-01-29 01:29:23-03', 5, 'U4', 'F4', 'Ass4'),
+('A5', 'A intercalação entre passado, presente e futuro neste filme torna-o uma experiência única.', '2023-07-16 16:07:21-03', 4, 'U5', 'F5', 'Ass5'),
+('A6', NULL, '2023-09-02 09:02:23-03', 4, 'U6', 'F6', 'Ass6');
 
 INSERT INTO FilmPagtoRoy (FilmeID, ValorPagto, DataPagto) VALUES
 ('F4', 500, '2000-09-14'),

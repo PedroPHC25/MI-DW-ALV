@@ -215,8 +215,8 @@ INSERT INTO Assiste (UsuarioID, FilmeID, Data) VALUES
 -- Inserindo dados na tabela Avaliacao
 INSERT INTO Avaliacao (AvaliacaoID, Comentario, AvaliacaoData, Nota, UsuarioID, FilmeID, AssinaturaID) VALUES
 ('A1', 'Uma introdução mágica e encantadora ao mundo de Hogwarts, perfeita para todas as idades.', '2023-04-17 18:02:23-03', 5, 'U1', 'F1', 'Ass1'),
-('A2', 'Uma épica jornada de ficção científica que combina emoção e ciência de forma brilhante.', '2023-08-01 12:45:37-03', 6, 'U2', 'F2', 'Ass2'),
-('A3', NULL, '2023-08-02 13:21:48-03', 8, 'U3', 'F3', 'Ass3');
+('A2', 'Uma épica jornada de ficção científica que combina emoção e ciência de forma brilhante.', '2023-08-01 12:45:37-03', 4, 'U2', 'F2', 'Ass2'),
+('A3', NULL, '2023-08-02 13:21:48-03', 2, 'U3', 'F3', 'Ass3');
 
 -- Inserindo dados na tabela Cargo
 INSERT INTO Cargo (CargoID, CargoNome) VALUES
@@ -1158,9 +1158,9 @@ INSERT INTO Assiste (UsuarioID, FilmeID, Data) VALUES
 ('U6', 'F6', '2023-09-02');
 
 INSERT INTO Avaliacao (AvaliacaoID, Comentario, AvaliacaoData, Nota, UsuarioID, FilmeID, AssinaturaID) VALUES
-('A4', 'Filme impecável com atuações maravilhosas. Me emocionei muito!', '2024-01-29 01:29:23-03', 10, 'U4', 'F4', 'Ass4'),
-('A5', 'A intercalação entre passado, presente e futuro neste filme torna-o uma experiência única.', '2023-07-16 16:07:21-03', 9, 'U5', 'F5', 'Ass5'),
-('A6', NULL, '2023-09-02 09:02:23-03', 8, 'U6', 'F6', 'Ass6');
+('A4', 'Filme impecável com atuações maravilhosas. Me emocionei muito!', '2024-01-29 01:29:23-03', 5, 'U4', 'F4', 'Ass4'),
+('A5', 'A intercalação entre passado, presente e futuro neste filme torna-o uma experiência única.', '2023-07-16 16:07:21-03', 4, 'U5', 'F5', 'Ass5'),
+('A6', NULL, '2023-09-02 09:02:23-03', 4, 'U6', 'F6', 'Ass6');
 
 INSERT INTO FilmPagtoRoy (FilmeID, ValorPagto, DataPagto) VALUES
 ('F4', 500, '2000-09-14'),
